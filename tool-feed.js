@@ -5,8 +5,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- Elemen DOM ---
     const generateBtn = document.getElementById('generate-btn');
     const statusOutput = document.getElementById('status-output');
-    const startIndexInput = document.getElementById('start-index');
-    const endIndexInput = document.getElementById('end-index');
+    const keywordListInput = document.getElementById('keyword-list');
     const startDateInput = document.getElementById('start-date');
     const endDateInput = document.getElementById('end-date');
 
@@ -24,7 +23,6 @@ document.addEventListener('DOMContentLoaded', function() {
         return `${randomNumber} ${randomHook} ${capitalizedKeyword}`; 
     }
 
-    // BARU: Fungsi untuk escape karakter XML
     function escapeXml(unsafe) {
         if (!unsafe) return '';
         return unsafe.replace(/[<>&'"]/g, function (c) {
@@ -55,32 +53,25 @@ document.addEventListener('DOMContentLoaded', function() {
         xml += `    <atom:link href="${siteUrl}/feed.xml" rel="self" type="application/rss+xml" />\n\n`;
 
         keywordList.forEach((keyword, index) => {
-            // Kalkulasi hari publikasi untuk post saat ini
             const dayOffset = Math.floor(index / postsPerDay);
             const postDate = new Date(startDate);
             postDate.setDate(postDate.getDate() + dayOffset);
 
-            // Buat waktu acak
             const randomHour = Math.floor(Math.random() * 24);
             const randomMinute = Math.floor(Math.random() * 60);
             const randomSecond = Math.floor(Math.random() * 60);
             postDate.setUTCHours(randomHour, randomMinute, randomSecond);
 
-            // Format tanggal ke standar RSS
             const pubDate = postDate.toUTCString();
-
             const title = generateSeoTitle(keyword);
             const keywordForUrl = keyword.replace(/\s/g, '-').toLowerCase();
             const articleUrl = `${siteUrl}/detail.html?q=${encodeURIComponent(keywordForUrl)}`;
-            
-            // BARU: Escape karakter XML di URL gambar
             const imageUrl = `https://tse1.mm.bing.net/th?q=${encodeURIComponent(keyword)}&amp;w=400&amp;h=600&amp;c=7&amp;rs=1&amp;p=0&amp;dpr=1.5&amp;pid=1.7`;
             
             const capitalizedKeyword = capitalizeEachWord(keyword);
-            const hashtag = capitalizedKeyword.replace(/\s/g, '');
-            const description = `Craving new ideas for ${capitalizedKeyword}? Discover amazing concepts and stunning visuals. Click to get the full inspiration now! #${hashtag} #HomeDecor #DesignIdeas`;
+            // BARU: Deskripsi dibuat tanpa hashtag dan variabel hashtag dihapus.
+            const description = `Craving new ideas for ${capitalizedKeyword}? Discover amazing concepts and stunning visuals. Click to get the full inspiration now!`;
 
-            // BARU: Escape karakter XML di judul dan deskripsi
             const escapedTitle = escapeXml(title);
             const escapedDescription = escapeXml(description);
 
@@ -99,20 +90,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // --- Logika Utama Saat Tombol Diklik ---
     generateBtn.addEventListener('click', async () => {
-        // Baca semua nilai input
-        const startNum = parseInt(startIndexInput.value, 10);
-        const endNum = parseInt(endIndexInput.value, 10);
+        const keywordListData = keywordListInput.value;
         const startDateVal = startDateInput.value;
         const endDateVal = endDateInput.value;
 
         // Validasi input
-        if (!startDateVal || !endDateVal) {
-            statusOutput.textContent = 'Error: Please select both a Start Date and an End Date.';
+        if (!keywordListData.trim()) {
+            statusOutput.textContent = 'Error: Please enter at least one keyword in the list.';
             statusOutput.style.color = 'red';
             return;
         }
-        if (isNaN(startNum) || isNaN(endNum) || startNum < 1 || endNum < startNum) {
-            statusOutput.textContent = 'Error: Invalid keyword number range.';
+        if (!startDateVal || !endDateVal) {
+            statusOutput.textContent = 'Error: Please select both a Start Date and an End Date.';
             statusOutput.style.color = 'red';
             return;
         }
@@ -126,7 +115,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         try {
-            statusOutput.textContent = 'Status: Fetching data...';
+            statusOutput.textContent = 'Status: Processing...';
             statusOutput.style.color = '#333';
             generateBtn.disabled = true;
             generateBtn.textContent = 'Generating...';
@@ -136,28 +125,20 @@ document.addEventListener('DOMContentLoaded', function() {
             const siteUrl = (await domainResponse.text()).trim().replace(/\/$/, '');
             if (!siteUrl) throw new Error('domain.txt file is empty.');
 
-            const keywordResponse = await fetch('keyword.txt');
-            if (!keywordResponse.ok) throw new Error('Could not find keyword.txt file.');
-            let allKeywords = await keywordResponse.text();
-            allKeywords = allKeywords.split('\n').filter(k => k.trim() !== '');
-            
-            if (startNum > allKeywords.length) throw new Error(`Start number (${startNum}) is greater than total keywords (${allKeywords.length}).`);
+            const keywordSelection = keywordListData.split('\n').map(k => k.trim()).filter(k => k !== '');
+            if (keywordSelection.length === 0) {
+                throw new Error('Keyword list is empty or contains only whitespace.');
+            }
 
-            const keywordSelection = allKeywords.slice(startNum - 1, endNum);
-
-            // Menghitung jumlah hari dalam rentang (inklusif)
             const diffTime = Math.abs(endDate - startDate);
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
 
-            // Menghitung berapa post yang harus didistribusikan per hari
             const postsPerDay = Math.ceil(keywordSelection.length / diffDays);
 
             statusOutput.textContent = `Status: Processing ${keywordSelection.length} keywords over ${diffDays} days (${postsPerDay} posts/day)...`;
             
-            // Hasilkan konten XML dengan logika baru
             const feedXml = generateRssFeed(keywordSelection, siteUrl, startDate, postsPerDay);
 
-            // Buat file dan picu unduhan
             const blob = new Blob([feedXml], { type: 'application/rss+xml;charset=utf-8' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
