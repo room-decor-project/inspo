@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let isLoading = false;
     const contentContainer = document.getElementById('auto-content-container');
     const loader = document.getElementById('loader');
-
+        
     function shuffleArray(array) { for (let i = array.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[array[i], array[j]] = [array[j], array[i]]; } }
     function capitalizeEachWord(str) { if (!str) return ''; return str.toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' '); }
     function generateSeoTitle(baseKeyword) { const hookWords = ['Best', 'Amazing', 'Cool', 'Inspiring', 'Creative', 'Awesome', 'Stunning', 'Beautiful', 'Unique', 'Ideas', 'Inspiration', 'Designs']; const randomHook = hookWords[Math.floor(Math.random() * hookWords.length)]; const randomNumber = Math.floor(Math.random() * (200 - 55 + 1)) + 55; const capitalizedKeyword = capitalizeEachWord(baseKeyword); return `${randomNumber} ${randomHook} ${capitalizedKeyword}`; }
@@ -22,8 +22,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 const keywordForUrl = keyword.replace(/\s/g, '-').toLowerCase();
                 const linkUrl = `detail.html?q=${encodeURIComponent(keywordForUrl)}`; 
 
-                // ▼▼▼ PERUBAHAN UKURAN GAMBAR: Dari 240x360 menjadi 400x600 (Medium) ▼▼▼
-                const imageUrl = `https://tse1.mm.bing.net/th?q=${encodeURIComponent(keyword)}&w=400&h=600&c=7&rs=1&p=0&dpr=1.5&pid=1.7`;
+                // ▼▼▼ PERUBAHAN UKURAN GAMBAR: Menjadi Large (600x900) ▼▼▼
+                const imageUrl = `https://tse1.mm.bing.net/th?q=${encodeURIComponent(keyword)}&w=600&h=900&c=7&rs=1&p=0&dpr=1.5&pid=1.7`;
                 
                 const newTitle = generateSeoTitle(keyword);
                 const cardHTML = `<article class="content-card"><a href="${linkUrl}"><img src="${imageUrl}" alt="${newTitle}" loading="lazy"><div class="content-card-body"><h3>${newTitle}</h3></div></a></article>`;
@@ -51,7 +51,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 const response = await fetch('keyword.txt');
                 if (!response.ok) throw new Error('keyword.txt file not found.');
                 const text = await response.text();
-                const keywords = text.split('\n').filter(k => k.trim() !== '');
+                
+                const keywords = text.split('\n')
+                                     .map(k => k.trim())
+                                     .filter(k => k.trim() !== '');
+                
                 shuffleArray(keywords);
                 localStorage.setItem('shuffledKeywords', JSON.stringify(keywords));
                 localStorage.setItem('shuffleDate', today);
