@@ -9,6 +9,18 @@ document.addEventListener('DOMContentLoaded', function() {
     const startDateInput = document.getElementById('start-date');
     const endDateInput = document.getElementById('end-date');
 
+    // --- ▼▼▼ FUNGSI PENGACAK ARRAY DITAMBAHKAN DI SINI ▼▼▼ ---
+    /**
+     * Mengacak urutan elemen dalam sebuah array menggunakan algoritma Fisher-Yates.
+     * @param {Array} array Array yang akan diacak.
+     */
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+    }
+
     // --- Fungsi Bantuan ---
     function capitalizeEachWord(str) { 
         if (!str) return ''; 
@@ -69,7 +81,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const imageUrl = `https://tse1.mm.bing.net/th?q=${encodeURIComponent(keyword)}&amp;w=400&amp;h=600&amp;c=7&amp;rs=1&amp;p=0&amp;dpr=1.5&amp;pid=1.7`;
             
             const capitalizedKeyword = capitalizeEachWord(keyword);
-            // BARU: Deskripsi dibuat tanpa hashtag dan variabel hashtag dihapus.
             const description = `Craving new ideas for ${capitalizedKeyword}? Discover amazing concepts and stunning visuals. Click to get the full inspiration now!`;
 
             const escapedTitle = escapeXml(title);
@@ -125,10 +136,14 @@ document.addEventListener('DOMContentLoaded', function() {
             const siteUrl = (await domainResponse.text()).trim().replace(/\/$/, '');
             if (!siteUrl) throw new Error('domain.txt file is empty.');
 
-            const keywordSelection = keywordListData.split('\n').map(k => k.trim()).filter(k => k !== '');
+            let keywordSelection = keywordListData.split('\n').map(k => k.trim()).filter(k => k !== '');
             if (keywordSelection.length === 0) {
                 throw new Error('Keyword list is empty or contains only whitespace.');
             }
+
+            // --- ▼▼▼ MODIFIKASI: Mengacak urutan keyword list ▼▼▼ ---
+            shuffleArray(keywordSelection);
+            // --- ▲▲▲ AKHIR MODIFIKASI ▲▲▲
 
             const diffTime = Math.abs(endDate - startDate);
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
